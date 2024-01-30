@@ -1,18 +1,30 @@
 // get elements from DOM
 const CELLS = [...document.querySelectorAll(".cell")];
-const resultEl: Element = document.querySelector('.result') as Element;
+const resultEl = document.querySelector('.result');
+const gameTypeEl = document.querySelector('.dropdown');
+
+const quizEl = document.querySelector('.quiz');
+const questionEl = document.querySelector('.question');
+const optionsEl = [...document.querySelectorAll('.option')];
+const quizresultEl = document.querySelector('.quizresult');
+const quiztitleEl = document.querySelector('.quiz-title');
+
+const quizElold = quizEl.style.display;
+const optionsElold = optionsEl[0].style.display;
+const questionElold = questionEl.style.display;
+const resultElold = quizresultEl.style.display;
 
 // declare constants
 
 class Cell {
-    status: string | null;
+    status;
     constructor() {
         this.status = null;
     }
 }
 
 class Board {
-    cells: Cell[];
+    cells;
     constructor() {
         this.cells = [];
         // adds 9 instances of the Cell class to an array.
@@ -32,15 +44,30 @@ const PLAYERS = {
 }
 
 // declare variables
-let board: Board;
+let board;
 let playerMove = PLAYERS['circle'];
+
 let game = true;
+let gameStarted = false;
+
+let quizAnswered = false;
+let quizCorrect = false;
+
+let correctAnswers = 0;
+let totalAnswers = 0;
+
+let gameType = gameTypeEl.value;
+gameTypeEl.addEventListener('change', () => {
+    if (!gameStarted) {
+        gameType = gameTypeEl.value;
+    }
+})
 
 
 // GETTERS
 
 // finds the winner or draw, else returns false
-function winCheck(state: number[][] | any[][]) {
+function winCheck(state) {
     for (let play = 0; play < 2; play++) {
         let player = play == 0 ? PLAYERS['cross'] : PLAYERS['circle'];
         //check all rows.
@@ -101,7 +128,7 @@ function winCheck(state: number[][] | any[][]) {
 
     return false;
 }
-function movesLeft(state: number[][] | any[][]) {
+function movesLeft(state) {
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
             if (state[i][j] == null)
@@ -112,13 +139,13 @@ function movesLeft(state: number[][] | any[][]) {
 }
 
 // returns a 2d array with the current status of all the cells on the board.
-function getState() : number[][] | any[][] {
-    let state: number[][] = [];
+function getState() {
+    let state = [];
     let index = 0;
     // loops through the rows in the board
     for (let i = 0; i < 3; i++) {
         // creates a sub-array for the cells in the different colums in a row
-        let temp: any[] = [];
+        let temp = [];
         for (let j = 0; j < 3; j++) {
             // adds the status of a cell to the row
             temp.push(board.cells[index].status);
@@ -137,13 +164,13 @@ function reloadAssets() {
     // loop through all cells and assign the image associated with their current status.
     for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
-            let imgEl: HTMLImageElement = [...CELLS[l].children][0] as HTMLImageElement
+            let imgEl = [...CELLS[l].children][0]
             if (board.cells[l].status == PLAYERS['cross']) {
                 imgEl.src = 'cross.svg';
             } else if (board.cells[l].status == PLAYERS['circle']) {
                 imgEl.src = 'circle.svg';
             } else {
-                imgEl.src = '';
+                imgEl.src = 'blank.svg';
             }
             l++;
         }
@@ -151,8 +178,8 @@ function reloadAssets() {
 }
 
 // displays text on screen and ends game.
-function endGame(winner: string | boolean) : boolean {
-    let winnerResult: string = '';
+function endGame(winner) {
+    let winnerResult = '';
     if (winner === PLAYERS['cross']) {
         winnerResult = "Cross Won!";
     } else if (winner === PLAYERS['circle']) {
@@ -160,13 +187,15 @@ function endGame(winner: string | boolean) : boolean {
     } else if (winner === PLAYERS['none']) {
         winnerResult = 'Draw!';
     }
+    winnerResult += `<br> Correct answers: ${correctAnswers}/${totalAnswers}, ${(correctAnswers / totalAnswers) * 100}%`;
+    quizEl.style.display = 'none';
     resultEl.innerHTML = winnerResult;
     game = false;
     return true;
 }
 
 // reload textures and check if there is a winner.
-function endTurn(): boolean {
+function endTurn() {
     reloadAssets();
 
     let state = getState();
@@ -194,42 +223,76 @@ function setup() {
 setup();
 
 // runs when player clicks, executes player and computer turns.
-function play(cellIndex: number) {
+function play(cellIndex) {
     // if game ends, reset board.
     if (!game) {
         board = new Board();
         game = true;
+        gameStarted = false;
+        gameType = gameTypeEl.value;
         // reload textures on screen.
+        quizEl.style.display = quizElold;
         resultEl.innerHTML = '';
         reloadAssets();
         // return the function so the player has to click again.
         return;
     }
 
-    // make player move.
-    if (board.cells[cellIndex].status == null) {
-        // sets cell to player's chosen side if the cell is empty.
-        board.cells[cellIndex].status = playerMove;
-    } else {
-        return; // if the cell is occupied, stop the function and let the player try again.
+    if (!quizAnswered && playerMove == PLAYERS['circle']) {
+        return;
     }
-    endTurn();
 
-    // make computer move.
-    let newState = MiniMax(getState(), true, 0, -99999, 99999)[1]; // take the optimal state for this turn from the minimax algorithm.
-    let index = 0; // loop through all cells and match them with optimal state.
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            board.cells[index].status = newState[i][j];
-            index++;
-        }
+    if (!quizCorrect) {
+        quizAnswered = false;
+        return;
     }
-    endTurn();
+
+    gameStarted = true
+
+    if (gameType == 'ai') {
+        playerMove = PLAYERS['circle'];
+        // make player move.
+        if (board.cells[cellIndex].status == null) {
+            // sets cell to player's chosen side if the cell is empty.
+            board.cells[cellIndex].status = playerMove;
+        } else {
+            return; // if the cell is occupied, stop the function and let the player try again.
+        }
+        endTurn();
+
+        // make computer move.
+        let newState = MiniMax(getState(), true, 0, -99999, 99999)[1]; // take the optimal state for this turn from the minimax algorithm.
+        let index = 0; // loop through all cells and match them with optimal state.
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                board.cells[index].status = newState[i][j];
+                index++;
+            }
+        }
+        endTurn();
+    } else {
+        // make player move.
+        if (board.cells[cellIndex].status == null) {
+            // sets cell to player's chosen side if the cell is empty.
+            board.cells[cellIndex].status = playerMove;
+            playerMove = playerMove == PLAYERS['circle'] ? PLAYERS['cross'] : PLAYERS['circle']; // get opposite of playerMove
+        } else {
+            return; // if the cell is occupied, stop the function and let the player try again.
+        }
+        endTurn();
+    }
+
+    newQuestion();
+    if (quiz) {
+        show();
+    }
+    quizAnswered = false;
+    quizCorrect = false;
 }
 
 // I got the minimax algorithm from https://github.com/rinovethamoses97
 
-function MiniMax(state: number[][] | any[][], max: boolean, depth: number, alpha: number, beta: number) {
+function MiniMax(state, max, depth, alpha, beta) {
     // the player will try to get a lower score.
     let minimiser = playerMove;
 
@@ -308,4 +371,181 @@ function MiniMax(state: number[][] | any[][], max: boolean, depth: number, alpha
         }
         return [minScore, minState, depth];
     }
+}
+
+// QUIZ
+
+
+const questions = [
+    {
+        question: 'What is the purpose of sustainable road development?',
+        options: [
+            {
+                option: 'To increase traffic congestion',
+                correct: false
+            },
+            {
+                option: 'To reduce carbon emissions',
+                correct: true
+            },
+            {
+                option: 'To increase waste during construction',
+                correct: false
+            },
+            {
+                option: 'To reduce pavement life',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'What are some benefits of sustainable roads?',
+        options: [
+            {
+                option: 'Increased carbon emissions',
+                correct: false
+            },
+            {
+                option: 'Increased traffic congestion',
+                correct: false
+            },
+            {
+                option: 'Improved air quality',
+                correct: true
+            },
+            {
+                option: ' Increased future maintenance requirements',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'What is NOT a challenge in building sustainable roads?',
+        options: [
+            {
+                option: 'Reducing waste during construction',
+                correct: false
+            },
+            {
+                option: 'Incorporating more asphalt content',
+                correct: true
+            },
+            {
+                option: 'Extending pavement life',
+                correct: false
+            },
+            {
+                option: 'Balancing environmental concerns with economic considerations',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'What is an example of a sustainable road project?',
+        options: [
+            {
+                option: 'Building more airports',
+                correct: false
+            },
+            {
+                option: 'Shortening of roads for increased traffic',
+                correct: false
+            },
+            {
+                option: 'Using materials such as asphalt and concrete',
+                correct: false
+            },
+            {
+                option: 'Planting trees along highways to reduce pollution',
+                correct: true
+            }
+        ]
+    },
+    {
+        question: 'What is the purpose of sustainable road maintenance?',
+        options: [
+            {
+                option: 'To maintain roads in a way that is eco-friendly',
+                correct: true
+            },
+            {
+                option: 'To increase the environmental impact of road maintenance',
+                correct: false
+            },
+            {
+                option: 'To promote unsustainable development',
+                correct: false
+            },
+            {
+                option: 'To reduce the lifespan of roads',
+                correct: false
+            }
+        ]
+    }
+]
+
+let quiz = true;
+
+for (let i = 0; i < optionsEl.length; i++) {
+    optionsEl[i].addEventListener('click', () => {
+        if (quiz) {
+            guess(i);
+        }
+    });
+}
+
+const clear = () => {
+    for (let i = 0; i < optionsEl.length; i++) {
+        optionsEl[i].style.display = 'none';
+    }
+    questionEl.style.display = 'none';
+    quizresultEl.style.display = resultElold;
+}
+
+const show = () => {
+    for (let i = 0; i < optionsEl.length; i++) {
+        optionsEl[i].style.display = optionsElold;
+    }
+    questionEl.style.display = questionElold;
+    quizresultEl.style.display = 'none';
+}
+
+const letters = ['A', 'B', 'C', 'D'];
+
+let i = 0;
+let correctIndex = 0;
+const newQuestion = () => {
+    if (i >= questions.length) {
+        i = 0
+    }
+    const currentquestion = questions[i];
+    questionEl.innerHTML = `${i + 1}) ${currentquestion['question']}`;
+
+    for (let j = 0; j < optionsEl.length; j++) {
+        optionsEl[j].innerHTML = `${letters[j]}) ${currentquestion['options'][j]['option']}`;
+        if (currentquestion['options'][j]['correct']) {
+            correctIndex = j;
+        }
+    }
+    i++;
+}
+newQuestion();
+
+const guess = (guessIndex) => {
+    totalAnswers++;
+    quizAnswered = true;
+    if (guessIndex == correctIndex) {
+        quizresultEl.innerHTML = 'Correct';
+        correctAnswers++;
+        quizCorrect = true;
+    } else {
+        quizresultEl.innerHTML = 'Incorrect';
+        setTimeout(() => {
+            newQuestion();
+            if (quiz) {
+                show();
+            }
+        }, 500);
+    }
+    clear();
 }

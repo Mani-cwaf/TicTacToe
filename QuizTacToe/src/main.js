@@ -56,11 +56,25 @@ let quizCorrect = false;
 let correctAnswers = 0;
 let totalAnswers = 0;
 
+let quizIndex = 0;
+let correctIndex = 0;
+
 let gameType = gameTypeEl.value;
 gameTypeEl.addEventListener('change', () => {
-    if (!gameStarted) {
-        gameType = gameTypeEl.value;
-    }
+    if (gameStarted) {
+        endGame(PLAYERS['none']);
+        board = new Board();
+        game = true;
+        gameStarted = false;
+        // reload textures on screen.
+        quizEl.style.display = quizElold;
+        resultEl.innerHTML = '';
+        reloadAssets();
+
+        quizIndex = 0;
+        newQuestion();
+    } 
+    gameType = gameTypeEl.value;
 })
 
 
@@ -187,9 +201,12 @@ function endGame(winner) {
     } else if (winner === PLAYERS['none']) {
         winnerResult = 'Draw!';
     }
-    winnerResult += `<br> Correct answers: ${correctAnswers}/${totalAnswers}, ${(correctAnswers / totalAnswers) * 100}%`;
+    winnerResult += `<br> Correct answers: ${correctAnswers}/${totalAnswers}, ${Math.round((correctAnswers / totalAnswers) * 100)}%`;
     quizEl.style.display = 'none';
     resultEl.innerHTML = winnerResult;
+    quizIndex = 0;
+    correctIndex = 0;
+
     game = false;
     return true;
 }
@@ -229,7 +246,8 @@ function play(cellIndex) {
         board = new Board();
         game = true;
         gameStarted = false;
-        gameType = gameTypeEl.value;
+        totalAnswers = 0;
+        correctAnswers = 0;
         // reload textures on screen.
         quizEl.style.display = quizElold;
         resultEl.innerHTML = '';
@@ -481,7 +499,112 @@ const questions = [
                 correct: false
             }
         ]
-    }
+    },
+    {
+        question: 'Since 2016, how many Sutainable goals are included in MDGs',
+        options: [
+            {
+                option: '15',
+                correct: false
+            },
+            {
+                option: '16',
+                correct: false
+            },
+            {
+                option: '17',
+                correct: true
+            },
+            {
+                option: '20',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'Any adulterated elements leak into the ground, filtration, and are carried into a groundwater reservoir is known as _',
+        options: [
+            {
+                option: 'Land contamination',
+                correct: false
+            },
+            {
+                option: 'Water pollution',
+                correct: true
+            },
+            {
+                option: 'Noise pollution',
+                correct: false
+            },
+            {
+                option: 'Air pollution',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'After mining, the huge holes left behind are used for _',
+        options: [
+            {
+                option: 'Wastewater storage',
+                correct: false
+            },
+            {
+                option: 'Waste and water storage',
+                correct: false
+            },
+            {
+                option: 'Waste storage',
+                correct: false
+            },
+            {
+                option: 'Waste disposal',
+                correct: true
+            }
+        ]
+    },
+    {
+        question: 'Mercury and lead are toxic elements that cause _',
+        options: [
+            {
+                option: 'Land contamination',
+                correct: true
+            },
+            {
+                option: 'Noise pollution',
+                correct: false
+            },
+            {
+                option: 'Air pollution',
+                correct: false
+            },
+            {
+                option: 'Water pollution',
+                correct: false
+            }
+        ]
+    },
+    {
+        question: 'What does a firm seek for whenever the price of the mineral remains high?',
+        options: [
+            {
+                option: 'New countries',
+                correct: false
+            },
+            {
+                option: 'Remains the same',
+                correct: false
+            },
+            {
+                option: 'New miners',
+                correct: false
+            },
+            {
+                option: 'New deposits',
+                correct: true
+            }
+        ]
+    },
 ]
 
 let quiz = true;
@@ -512,14 +635,12 @@ const show = () => {
 
 const letters = ['A', 'B', 'C', 'D'];
 
-let i = 0;
-let correctIndex = 0;
 const newQuestion = () => {
-    if (i >= questions.length) {
-        i = 0
+    if (quizIndex >= questions.length) {
+        quizIndex = 0;
     }
-    const currentquestion = questions[i];
-    questionEl.innerHTML = `${i + 1}) ${currentquestion['question']}`;
+    const currentquestion = questions[quizIndex];
+    questionEl.innerHTML = `${quizIndex + 1}) ${currentquestion['question']}`;
 
     for (let j = 0; j < optionsEl.length; j++) {
         optionsEl[j].innerHTML = `${letters[j]}) ${currentquestion['options'][j]['option']}`;
@@ -527,7 +648,7 @@ const newQuestion = () => {
             correctIndex = j;
         }
     }
-    i++;
+    quizIndex++;
 }
 newQuestion();
 
@@ -544,6 +665,9 @@ const guess = (guessIndex) => {
             newQuestion();
             if (quiz) {
                 show();
+            }
+            if (gameType == 'player') {
+                playerMove = playerMove == PLAYERS['circle'] ? PLAYERS['cross'] : PLAYERS['circle'];
             }
         }, 500);
     }

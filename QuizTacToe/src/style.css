@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500&display=swap');
+
 :root {
     --contrast: rgb(251, 255, 149);
 }
@@ -11,13 +13,18 @@ body {
     background-color: black;
     overflow: hidden;
     grid-template-columns: repeat(2, 1fr);
+    font-family: 'Rubik';
+}
+
+body * {
+    font-family: 'Rubik';
 }
 
 .container {
     display: grid;
     width: fit-content;
     height: fit-content;
-    margin: auto;
+    margin: 5rem;
 
     border: 10px solid var(--contrast);
     border-radius: 15px;
@@ -32,8 +39,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 9.5rem;
-    height: 9.5rem;
+    width: 10rem;
+    height:10rem;
     margin: 0.75rem;
     padding: 0;
     background-color: black;
@@ -87,10 +94,15 @@ option {
 
 .quiz-title {
     text-align: center;
+    width: 8rem;
     font-size: 3rem;
     font-weight: 900;
     color: var(--contrast);
     margin: 1rem 0 0 0;
+    box-shadow: 0 0 5px 5px var(--contrast);
+    border-radius: 10px;
+    margin: 0.5rem;
+    padding: 0.5rem 0.25rem 0.5rem 0.25rem;
 }
 
 .question {
@@ -124,4 +136,13 @@ option {
     text-align: center;
     font-size: 5rem;
     font-weight: 600;
+}
+
+footer {
+    color: var(--contrast);
+    position: absolute;
+    width: 100vw;
+    font-size: 1rem;
+    bottom: 0.5rem;
+    text-align: center;
 }

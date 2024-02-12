@@ -1,46 +1,90 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500&display=swap');
+
 :root {
-    --contrast: rgb(0, 255, 13);
+    --contrast: rgb(251, 255, 149);
 }
 
 body {
-    display: flex;
+    display: grid;
     margin: 0;
     padding: 0;
-    width:100vw;
-    width:100vw;
+    width: 100vw;
+    width: 100vw;
     background-color: black;
     overflow: hidden;
+    grid-template-columns: repeat(2, 1fr);
+    font-family: 'Rubik';
+}
+
+body * {
+    font-family: 'Rubik';
 }
 
 .container {
     display: grid;
     width: fit-content;
     height: fit-content;
-
-    margin: 2rem;
+    margin: 5rem;
 
     border: 10px solid var(--contrast);
     border-radius: 15px;
     background-color: var(--contrast);
+    box-shadow: 0 0 10px 10px rgb(226, 255, 130);
 
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
 }
 
 .cell {
-    width: 11.5rem;
-    height: 11.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 10rem;
+    height:10rem;
     margin: 0.75rem;
     padding: 0;
     background-color: black;
 }
 
+.cell>img {
+    width: 9rem;
+    height: 9rem;
+}
+
 .options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     width: 100%;
 }
 
 .result {
+    height: 4rem;
     text-align: center;
     font-size: 3rem;
     color: var(--contrast);
+}
+
+.dropdown {
+    background-color: var(--contrast);
+    font-size: 2rem;
+    font-weight: 750;
+    padding: 0.5rem;
+    border-radius: 10px;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+}
+
+option {
+    font-size: 2rem;
+    font-weight: 750;
+}
+
+footer {
+    color: var(--contrast);
+    position: absolute;
+    width: 100vw;
+    font-size: 1rem;
+    bottom: 0.5rem;
+    text-align: center;
 }

@@ -1,6 +1,7 @@
 // get elements from DOM
-const CELLS = [...document.querySelectorAll(".cell")];
-const resultEl: Element = document.querySelector('.result') as Element;
+const CELLS = [...document.querySelectorAll(".cell")]  as HTMLElement[];
+const resultEl: Element = document.querySelector('.result') as HTMLElement;
+const gameTypeEl = document.querySelector('.dropdown')  as HTMLSelectElement;
 
 // declare constants
 
@@ -34,7 +35,23 @@ const PLAYERS = {
 // declare variables
 let board: Board;
 let playerMove = PLAYERS['circle'];
+
 let game = true;
+let gameStarted = false;
+
+let gameType = gameTypeEl.value;
+gameTypeEl.addEventListener('change', () => {
+    if (gameStarted) {
+        endGame(PLAYERS['none']);
+        board = new Board();
+        game = true;
+        gameStarted = false;
+        // reload textures on screen.
+        resultEl.innerHTML = '';
+        reloadAssets();
+    } 
+    gameType = gameTypeEl.value;
+})
 
 
 // GETTERS
@@ -112,7 +129,7 @@ function movesLeft(state: number[][] | any[][]) {
 }
 
 // returns a 2d array with the current status of all the cells on the board.
-function getState() : number[][] | any[][] {
+function getState(): number[][] | any[][] {
     let state: number[][] = [];
     let index = 0;
     // loops through the rows in the board
@@ -143,7 +160,7 @@ function reloadAssets() {
             } else if (board.cells[l].status == PLAYERS['circle']) {
                 imgEl.src = 'circle.svg';
             } else {
-                imgEl.src = '';
+                imgEl.src = 'blank.svg';
             }
             l++;
         }
@@ -151,7 +168,7 @@ function reloadAssets() {
 }
 
 // displays text on screen and ends game.
-function endGame(winner: string | boolean) : boolean {
+function endGame(winner: string | boolean): boolean {
     let winnerResult: string = '';
     if (winner === PLAYERS['cross']) {
         winnerResult = "Cross Won!";
@@ -199,6 +216,7 @@ function play(cellIndex: number) {
     if (!game) {
         board = new Board();
         game = true;
+        gameStarted = false;
         // reload textures on screen.
         resultEl.innerHTML = '';
         reloadAssets();
@@ -206,35 +224,50 @@ function play(cellIndex: number) {
         return;
     }
 
-    // make player move.
-    if (board.cells[cellIndex].status == null) {
-        // sets cell to player's chosen side if the cell is empty.
-        board.cells[cellIndex].status = playerMove;
-    } else {
-        return; // if the cell is occupied, stop the function and let the player try again.
-    }
-    endTurn();
+    gameStarted = true
 
-    // make computer move.
-    let newState = MiniMax(PLAYERS['cross'], getState(), true, 0, -99999, 99999)[1]; // take the optimal state for this turn from the minimax algorithm.
-    let index = 0; // loop through all cells and match them with optimal state.
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            board.cells[index].status = newState[i][j];
-            index++;
+    if (gameType == 'ai') {
+        playerMove = PLAYERS['circle'];
+        // make player move.
+        if (board.cells[cellIndex].status == null) {
+            // sets cell to player's chosen side if the cell is empty.
+            board.cells[cellIndex].status = playerMove;
+        } else {
+            return; // if the cell is occupied, stop the function and let the player try again.
         }
+        endTurn();
+
+        // make computer move.
+        let newState = MiniMax(getState(), true, 0, -99999, 99999)[1]; // take the optimal state for this turn from the minimax algorithm.
+        let index = 0; // loop through all cells and match them with optimal state.
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                board.cells[index].status = newState[i][j];
+                index++;
+            }
+        }
+        endTurn();
+    } else {
+        // make player move.
+        if (board.cells[cellIndex].status == null) {
+            // sets cell to player's chosen side if the cell is empty.
+            board.cells[cellIndex].status = playerMove;
+            playerMove = playerMove == PLAYERS['circle'] ? PLAYERS['cross'] : PLAYERS['circle']; // get opposite of playerMove
+        } else {
+            return; // if the cell is occupied, stop the function and let the player try again.
+        }
+        endTurn();
     }
-    endTurn();
 }
 
 // I got the minimax algorithm from https://github.com/rinovethamoses97
 
-function MiniMax(side: string, state: number[][] | any[][], max: boolean, depth: number, alpha: number, beta: number) {
+function MiniMax(state: number[][] | any[][], max: boolean, depth: number, alpha: number, beta: number) {
     // the player will try to get a lower score.
-    let minimiser = side == PLAYERS['circle'] ? PLAYERS['cross'] : PLAYERS['circle']; // get opposite of side
+    let minimiser = playerMove;
 
     // the computer will try to get a higher score.
-    let maximiser = side;
+    let maximiser = playerMove == PLAYERS['circle'] ? PLAYERS['cross'] : PLAYERS['circle']; // get opposite of playerMove
 
     // once the game ends, return who won, give the state that allowed the game to end in that way, and the depth at which it ended.
     let win = winCheck(state);
@@ -265,7 +298,7 @@ function MiniMax(side: string, state: number[][] | any[][], max: boolean, depth:
                     // test the cell with the maximiser's side.
                     state[i][j] = maximiser;
 
-                    let temp = MiniMax(side, state, !max, depth + 1, alpha, beta); // test all possible moves that can be done on the minimiser's side, then loop back and forth until the game is over.
+                    let temp = MiniMax(state, !max, depth + 1, alpha, beta); // test all possible moves that can be done on the minimiser's side, then loop back and forth until the game is over.
 
                     // if the game ends better than the previous best (evaluated winner score - depth), this will be the new optimal move.
                     if ((temp[0] - temp[2]) > maxScore) {
@@ -293,7 +326,7 @@ function MiniMax(side: string, state: number[][] | any[][], max: boolean, depth:
                     // test the cell with the minimiser's side.
                     state[i][j] = minimiser;
 
-                    let temp = MiniMax(side, state, !max, depth + 1, alpha, beta); // test all possible moves that can be done on the maximiser's side, then loop back and forth until the game is over.
+                    let temp = MiniMax(state, !max, depth + 1, alpha, beta); // test all possible moves that can be done on the maximiser's side, then loop back and forth until the game is over.
 
                     // if the game ends worse than the previous worst (evaluated winner score + depth), this will be the new optimal move to reduce score.
                     if ((temp[0] + temp[2]) < minScore) {
